@@ -19,6 +19,7 @@ import time
 
 try:
 	from tintri.v310 import Tintri
+	from tintri.v310 import VirtualMachineFilterSpec
 	TINTRI_AVAILABLE = True
 except ImportError:
     TINTRI_AVAILABLE = False
@@ -100,14 +101,14 @@ def GetVMStore(VM_Name,username,password,tgc):
         return single_vm[0].vmstoreName
 		
 def GetVMUUID(session,VM_Name):
-        VM_filter = VirtualMachineFilterSpec()
-        VM_filter.name = VM_Name
-        VM_filter.live = "true"
-        single_vm = session.get_vms(filters = VM_filter)
-        if (single_vm):
-                return single_vm[0].uuid.uuid
-        else:
-                return False
+	VM_filter = VirtualMachineFilterSpec()
+	VM_filter.name = VM_Name
+	VM_filter.live = "true"
+	single_vm = session.get_vms(filters = VM_filter)
+	if (single_vm):
+		return single_vm[0].uuid.uuid
+	else:
+		return False
 
 
 def main():
@@ -132,10 +133,10 @@ def main():
 
     # Connect to Tintri Global Center
     try:
-        VMStore = GetVMStore(module.params['VM'],module.params['username'],module.params['password'],module.params['tgc'])
-    except:
-        module.fail_json(msg="Failed to connect to Tintri Global Center")
-	
+		VMStore = GetVMStore(module.params['VM'],module.params['username'],module.params['password'],module.params['tgc'])
+    except Exception, e:
+        module.fail_json(msg="Failed to connect to Tintri Global Center. Error was: %s" % str(e))
+		
 	VMStoreSession = CreateSession(module.params['username'],password['password'],VMStore)
 	VMUUID = GetVMUUID(VMStoreSession,module.params['VM'])
 	SnapshotSpec = {
@@ -151,6 +152,7 @@ def main():
 	except:
 		module.fail_json(msg="The snapshot could not be created")
 
+	print(json.dumps({'success': true}))
 # import module snippets
 from ansible.module_utils.basic import *
 if __name__ == '__main__':
