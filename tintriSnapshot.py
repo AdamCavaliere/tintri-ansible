@@ -18,7 +18,7 @@
 import time
 
 try:
-    from tintri.v310 import Tintri
+	from tintri.v310 import Tintri
 	TINTRI_AVAILABLE = True
 except ImportError:
     TINTRI_AVAILABLE = False
