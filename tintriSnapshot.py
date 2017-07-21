@@ -9,7 +9,7 @@
 #
 # This module is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
@@ -22,7 +22,7 @@ try:
 	from tintri.v310 import VirtualMachineFilterSpec
 	TINTRI_AVAILABLE = True
 except ImportError:
-    TINTRI_AVAILABLE = False
+	TINTRI_AVAILABLE = False
 
 ANSIBLE_METADATA = {'status': ['preview'],
 					'supported_by': 'community',
@@ -44,13 +44,13 @@ options:
 	description:
 	- "The instance of Tintri Global Center that has the VMs"
   username:
-    required: true
-    description:
-    - "User Executing the snapshot"
+	required: true
+	description:
+	- "User Executing the snapshot"
   password:
-    required: true
-    description:
-    - "The password of the username executing the snapshot"
+	required: true
+	description:
+	- "The password of the username executing the snapshot"
   retentionMinutes:
 	required: false
 	description:
@@ -74,9 +74,9 @@ EXAMPLES = '''
 # Snapshot VMs
 - tintriSnapshot:
 	tgc: tintriGlobalCenter.tintri.com
-    username: foo
-    password: bar
-    snapDescription: Example Snapshot
+	username: foo
+	password: bar
+	snapDescription: Example Snapshot
 	retentionMinutes: 120
 	VM: [vms]
 	
@@ -84,21 +84,21 @@ EXAMPLES = '''
 '''
 
 def CreateSession(user,passw,vmstore):
-        session = Tintri(vmstore)
-        session.login(user,passw)
-        if session.is_logged_in():
-                return session
-        else:
-                return False
+		session = Tintri(vmstore)
+		session.login(user,passw)
+		if session.is_logged_in():
+			return session
+		else:
+			return False
 
 def GetVMStore(VM_Name,username,password,tgc):
 		tgcSession = CreateSession(username,password,tgc)
 		VM_filter = VirtualMachineFilterSpec()
-        VM_filter.name = VM_Name
-        VM_filter.live = "true"
-        single_vm = tgcSession.get_vms(filters = VM_filter)
+		VM_filter.name = VM_Name
+		VM_filter.live = "true"
+		single_vm = tgcSession.get_vms(filters = VM_filter)
 		tgcSession.logout()
-        return single_vm[0].vmstoreName
+		return single_vm[0].vmstoreName
 		
 def GetVMUUID(session,VM_Name):
 	VM_filter = VirtualMachineFilterSpec()
@@ -113,31 +113,31 @@ def GetVMUUID(session,VM_Name):
 
 def main():
 
-    module = AnsibleModule(
-        argument_spec = dict(
-            VM=dict(required=True, type='str'),
-            tgc=dict(required=True, type='str'),
-            username=dict(required=True, type='str'),
-            password=dict(required=True,type='str'),
-            retentionMinutes=dict(default=1440,type='int'),
-            snapDescription=dict(default='Ansible Snapshot',type='str'),
+	module = AnsibleModule(
+		argument_spec = dict(
+			VM=dict(required=True, type='str'),
+			tgc=dict(required=True, type='str'),
+			username=dict(required=True, type='str'),
+			password=dict(required=True,type='str'),
+			retentionMinutes=dict(default=1440,type='int'),
+			snapDescription=dict(default='Ansible Snapshot',type='str'),
 			snapConsistency=dict(default='CRASH_CONSISTENT',type='str')
-        ),
-        supports_check_mode=False
-    )
+		),
+		supports_check_mode=False
+	)
 
 	
 
-    if not TINTRI_AVAILABLE:
-        module.fail_json(msg="The Tintri sdk is not installed")
+	if not TINTRI_AVAILABLE:
+		module.fail_json(msg="The Tintri sdk is not installed")
 
-    # Connect to Tintri Global Center
-    try:
+	# Connect to Tintri Global Center
+	try:
 		VMStore = GetVMStore(module.params['VM'],module.params['username'],module.params['password'],module.params['tgc'])
-    except Exception, e:
-        module.fail_json(msg="Failed to connect to Tintri Global Center. Error was: %s" % str(e))
+	except Exception, e:
+		module.fail_json(msg="Failed to connect to Tintri Global Center. Error was: %s" % str(e))
 		
-	VMStoreSession = CreateSession(module.params['username'],password['password'],VMStore)
+	VMStoreSession = CreateSession(module.params['username'],module.params['password'],VMStore)
 	VMUUID = GetVMUUID(VMStoreSession,module.params['VM'])
 	SnapshotSpec = {
 					"typeId": "com.tintri.api.rest.v310.dto.domain.beans.snapshot.SnapshotSpec",
@@ -152,7 +152,7 @@ def main():
 	except:
 		module.fail_json(msg="The snapshot could not be created")
 
-	print(json.dumps({'success': true}))
+	module.exit_json(changed=True)
 # import module snippets
 from ansible.module_utils.basic import *
 if __name__ == '__main__':
