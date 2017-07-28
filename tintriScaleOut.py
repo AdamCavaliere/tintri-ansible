@@ -125,6 +125,7 @@ def main():
 		else:
 			module.fail_json(msg="Couldn't match up the pool name - please check case")
 	for VMstorePool in pools:
+		print VMstorePool
 		recommendations = tgcSession.get_recommendations(pools[VMstorePool])
 		current_recs = getRecommendationIDs(recommendations)
 		if current_recs:
