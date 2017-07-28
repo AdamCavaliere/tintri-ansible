@@ -119,9 +119,11 @@ def main():
 	except:
 		module.fail_json(msg="Couldn't get pool information!")
 	pools = getPoolIds(tgcPools)
+	
 	if module.params['poolName'] != "ALL": #Checks to see if a VMstore Pool is specified
 		if module.params['poolName'] in pools:
 			pools = pools[module.params['poolName']]
+			print pools
 		else:
 			module.fail_json(msg="Couldn't match up the pool name - please check case")
 	for VMstorePool in pools:
