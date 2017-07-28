@@ -122,7 +122,7 @@ def main():
 	
 	if module.params['poolName'] != "ALL": #Checks to see if a VMstore Pool is specified
 		if module.params['poolName'] in pools:
-			pools = pools[module.params['poolName']]
+			pools[module.params['poolName']] = pools[module.params['poolName']]
 		else:
 			module.fail_json(msg="Couldn't match up the pool name - please check case")
 	for VMstorePool in pools:
