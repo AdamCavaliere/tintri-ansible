@@ -5,5 +5,5 @@ There are modules for the most common sets of commands in Tintri.
 
 Current Modules:
 - tintriSnapshot
-- 
+- tintriScaleOut
 
