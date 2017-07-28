@@ -123,11 +123,9 @@ def main():
 	if module.params['poolName'] != "ALL": #Checks to see if a VMstore Pool is specified
 		if module.params['poolName'] in pools:
 			pools = pools[module.params['poolName']]
-			print pools
 		else:
 			module.fail_json(msg="Couldn't match up the pool name - please check case")
 	for VMstorePool in pools:
-		print VMstorePool
 		recommendations = tgcSession.get_recommendations(pools[VMstorePool])
 		current_recs = getRecommendationIDs(recommendations)
 		if current_recs:
