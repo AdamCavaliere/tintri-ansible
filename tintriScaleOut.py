@@ -16,7 +16,7 @@
 # along with Ansible.  If not, see <http://www.gnu.org/licenses/>.
 
 import time
-
+import json
 try:
 	from tintri.v310 import Tintri
 	from tintri.v310 import VirtualMachineFilterSpec
@@ -27,7 +27,7 @@ except ImportError:
 ANSIBLE_METADATA = {'status': ['preview'],
 					'supported_by': 'community',
 					'metadata_version': '1.0'}
-	
+					
 DOCUMENTATION = '''
 ---
 module: tintriSnapshot
@@ -51,77 +51,54 @@ options:
 	required: true
 	description:
 	- "The password of the username executing the snapshot"
-  retentionMinutes:
+  poolName:
 	required: false
 	description:
-	- "Time in minutes that the snapshot should be retained for"
-  VM:
-	required: true
-	description:
-	- "The name of the VM to be snapshotted"
-  snapDescription:
-	required: false
-	description:
-	- "The description given for the snapshot. If not provided, a standard description will be given"
-  snapConsistency:
-	required: false
-	description:
-	- "CRASH_CONSISTENT | VM_CONSISTENT | APP_CONSISTENT"
-	- "Default is CRASH_CONSISTENT"
+	- "Optional to specify a specific Pool to execute. If not set, ALL"
+	- "will be passed"
 '''
 
 EXAMPLES = '''
-# Snapshot VMs
-- tintriSnapshot:
+# Execute TGC Scale Out Recommendations
+- tintriScaleOut:
 	tgc: tintriGlobalCenter.tintri.com
 	username: foo
 	password: bar
-	snapDescription: Example Snapshot
-	retentionMinutes: 120
-	VM: [vms]
+	poolName: "Dev/Test Pool"
 	
 
 '''
 
-def CreateSession(user,passw,vmstore):
-		session = Tintri(vmstore)
+def CreateSession(user,passw,TGC):
+		session = Tintri(TGC)
 		session.login(user,passw)
 		if session.is_logged_in():
 			return session
 		else:
 			return False
 
-def GetVMStore(VM_Name,username,password,tgc):
-		tgcSession = CreateSession(username,password,tgc)
-		VM_filter = VirtualMachineFilterSpec()
-		VM_filter.name = VM_Name
-		VM_filter.live = "true"
-		single_vm = tgcSession.get_vms(filters = VM_filter)
-		tgcSession.logout()
-		return single_vm[0].vmstoreName
+def getPoolIds(tgcPools):
+	pools = {}
+	for pool in tgcPools:
+		pools[pool.name] = pool.uuid.uuid
+	return pools
+	
+def getRecommendationIDs(recommendations):
+	available_recommendations = {}
+	for recommendation in recommendations:
+		if ((recommendation.state == "AVAILABLE") or (recommendation.state == "AVAILABLE_ACKED")):
+			#print recommendation
+			available_recommendations[recommendation.id] = recommendation.vmstorePoolId
+	return available_recommendations
+
 		
-def GetVMUUID(session,VM_Name):
-	VM_filter = VirtualMachineFilterSpec()
-	VM_filter.name = VM_Name
-	VM_filter.live = "true"
-	single_vm = session.get_vms(filters = VM_filter)
-	if (single_vm):
-		return single_vm[0].uuid.uuid
-	else:
-		return False
-
-
 def main():
-
 	module = AnsibleModule(
 		argument_spec = dict(
-			VM=dict(required=True, type='str'),
 			tgc=dict(required=True, type='str'),
 			username=dict(required=True, type='str'),
 			password=dict(required=True,type='str'),
-			retentionMinutes=dict(default=1440,type='int'),
-			snapDescription=dict(default='Ansible Snapshot',type='str'),
-			snapConsistency=dict(default='CRASH_CONSISTENT',type='str')
+			poolName=dict(default='ALL',type='str'),
 		),
 		supports_check_mode=False
 	)
@@ -133,27 +110,31 @@ def main():
 
 	# Connect to Tintri Global Center
 	try:
-		VMStore = GetVMStore(module.params['VM'],module.params['username'],module.params['password'],module.params['tgc'])
+		tgcSession = CreateSession(module.params['username'],module.params['password'],module.params['tgc'])
 	except Exception, e:
 		module.fail_json(msg="Failed to connect to Tintri Global Center. Error was: %s" % str(e))
-		
-	VMStoreSession = CreateSession(module.params['username'],module.params['password'],VMStore)
-	VMUUID = GetVMUUID(VMStoreSession,module.params['VM'])
-	SnapshotSpec = {
-					"typeId": "com.tintri.api.rest.v310.dto.domain.beans.snapshot.SnapshotSpec",
-					"consistency": module.params['snapConsistency'],
-					"replicaRetentionMinutes": module.params['retentionMinutes'],
-					"retentionMinutes": module.params['retentionMinutes'],
-					"snapshotName": module.params['snapDescription'],
-					"sourceVmTintriUUID": VMUUID,
-	}	
+	
 	try:
-		VMStoreSession.create_snapshot(SnapshotSpec)
+		tgcPools = tgcSession.get_vmstore_pools()
 	except:
-		module.fail_json(msg="The snapshot could not be created")
+		module.fail_json(msg="Couldn't get pool information!")
+	pools = getPoolIds(tgcPools)
+	if module.params['poolName'] != "ALL": #Checks to see if a VMstore Pool is specified
+		if module.params['poolName'] in pools:
+			pools = pools[module.params['poolName']]
+		else:
+			module.fail_json(msg="Couldn't match up the pool name - please check case")
+	for VMstorePool in pools:
+		recommendations = tgcSession.get_recommendations(pools[VMstorePool])
+		current_recs = getRecommendationIDs(recommendations)
+		if current_recs:
+				for recommendation in current_recs:
+					tgcSession.acknowledge_recommendation(current_recs[recommendation], recommendation)
+					tgcSession.accept_recommendation(current_recs[recommendation],recommendation)
 
+		
 	module.exit_json(changed=True)
-# import module snippets
+	
 from ansible.module_utils.basic import *
 if __name__ == '__main__':
 	main()
