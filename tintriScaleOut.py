@@ -30,12 +30,12 @@ ANSIBLE_METADATA = {'status': ['preview'],
 					
 DOCUMENTATION = '''
 ---
-module: tintriSnapshot
+module: tintriScaleOut
 version_added: "1.0"
 author: "Adam Cavaliere (@AdamCavaliere)"
-short_description: Take Snapshots of VMs on Tintri
+short_description: Automate the execution of ScaleOut on Tintri.
 description:
-- A module to control Philips Hue lights via the python-hue library.
+- A module to automate the execution of VM Scale-Out through Tintri Global Center.
 requirements:
 - Tintri_PySDK-1.0-py2-none-any.whl
 options:

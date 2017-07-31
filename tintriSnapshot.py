@@ -35,7 +35,7 @@ version_added: "1.0"
 author: "Adam Cavaliere (@AdamCavaliere)"
 short_description: Take Snapshots of VMs on Tintri
 description:
-- A module to control Philips Hue lights via the python-hue library.
+- A module to take individual snapshots of VMs hosted on Tintri VMstores.
 requirements:
 - Tintri_PySDK-1.0-py2-none-any.whl
 options:
